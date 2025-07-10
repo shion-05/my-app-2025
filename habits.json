@@ -1,0 +1,35 @@
+[
+  {
+    "name": "筋トレ",
+    "reason": "筋肉を付けたいから．",
+    "logs": {
+      "2025-07-03": {
+        "date": "2025-07-03",
+        "done": true,
+        "reason_for_miss": ""
+      }
+    }
+  },
+  {
+    "name": "勉強",
+    "reason": "資格を撮取りたいから",
+    "logs": {
+      "2025-07-03": {
+        "date": "2025-07-03",
+        "done": true,
+        "reason_for_miss": "a"
+      }
+    }
+  },
+  {
+    "name": "w",
+    "reason": "",
+    "logs": {
+      "2025-07-03": {
+        "date": "2025-07-03",
+        "done": false,
+        "reason_for_miss": "a"
+      }
+    }
+  }
+]
