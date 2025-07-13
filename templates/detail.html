@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ habit.name }} の詳細</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .info {
+      font-size: 1.1em;
+      margin: 10px 0;
+    }
+
+    .btn-wrapper {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background-color: #45a049;
+    }
+
+    .btn.back {
+      background-color: #888;
+    }
+
+    .toggle-btn {
+      display: inline-block;
+      margin-top: 5px;
+      font-size: 0.95em;
+      color: #2196F3;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    #reason-box {
+      display: none;
+      margin-top: 5px;
+      padding-left: 10px;
+    }
+
+    @media (max-width: 500px) {
+      .btn-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn {
+        width: 90%;
+        text-align: center;
+      }
+    }
+
+    :root {
+      --bg-color: #f0f0f0;
+      --text-color: #000;
+      --card-bg: #fff;
+    }
+
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --card-bg: #1e1e1e;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ habit.name }} の詳細</h1>
+
+  <div class="card">
+    <div class="info"><strong>過去7日間の記録：</strong> {{ status_str }}</div>
+
+    <div class="info">
+      <strong>最新の未達成理由：</strong>
+      {% if recent_miss_reason %}
+        <span class="toggle-btn" onclick="toggleReason()">理由を表示／非表示</span>
+        <div id="reason-box">{{ recent_miss_reason }}</div>
+      {% else %}
+        なし
+      {% endif %}
+    </div>
+
+    <div class="info"><strong>連続達成日数：</strong> {{ continuous_days }} 日</div>
+    <div class="info"><strong>合計達成日数：</strong> {{ total_days }} 日</div>
+
+    <div class="btn-wrapper">
+      <a href="{{ url_for('graph', index=loop.index0 if loop is defined else request.path.split('/')[-1]) }}" class="btn">📅 月間記録</a>
+      <a href="{{ url_for('index') }}" class="btn back">⬅ 戻る</a>
+    </div>
+  </div>
+
+  <script>
+    function toggleReason() {
+      const box = document.getElementById("reason-box");
+      box.style.display = (box.style.display === "none") ? "block" : "none";
+    }
+
+    // ダークモード自動適用（localStorageに従う）
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+    }
+  </script>
+</body>
+</html>

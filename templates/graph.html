@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ habit.name }} の記録</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --done-color: #4CAF50;
+            --missed-color: #F44336;
+            --empty-color: #ccc;
+            --card-bg: white;
+            --link-color: #333;
+        }
+
+        body.dark {
+            --bg-color: #121212;
+            --text-color: #ddd;
+            --done-color: #66bb6a;
+            --missed-color: #ef5350;
+            --empty-color: #555;
+            --card-bg: #1e1e1e;
+            --link-color: #ddd;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .month-header {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .day {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .done {
+            background-color: var(--done-color);
+            color: white;
+        }
+
+        .missed {
+            background-color: var(--missed-color);
+            color: white;
+        }
+
+        .empty {
+            background-color: var(--empty-color);
+            color: white;
+        }
+
+        .calendar-nav {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .calendar-nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: bold;
+        }
+
+        .back-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto 0;
+            padding: 10px;
+            text-align: center;
+            background-color: #888;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .back-button:hover {
+            background-color: #777;
+        }
+
+        @media (max-width: 600px) {
+            .calendar {
+                gap: 6px;
+            }
+            .day {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ habit.name }} の記録</h1>
+    <div class="month-header">{{ year }}年 {{ month }}月</div>
+
+    <div class="calendar-nav">
+        <a href="{{ url_for('graph', index=index, year=prev_year, month=prev_month) }}">&#x25C0; 前の月</a>
+        <a href="{{ url_for('graph', index=index, year=next_year, month=next_month) }}">次の月 &#x25B6;</a>
+    </div>
+
+    <div class="calendar">
+        {% for day in calendar_data %}
+            <div class="day {{ day.status }}">{{ day.day }}</div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('index') }}" class="back-button">⬅ 戻る</a>
+
+    <script>
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+      }
+    </script>
+</body>
+</html>

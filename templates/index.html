@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>習慣トラッカー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --card-bg: white;
+      --text-color: #333;
+      --button-text: white;
+      --green: #4CAF50;
+      --red: #f44336;
+      --blue: #2196F3;
+      --gray: #888;
+    }
+
+    body.dark-mode {
+      --bg-color: #1e1e1e;
+      --card-bg: #2e2e2e;
+      --text-color: #f0f0f0;
+      --button-text: #1e1e1e;
+    }
+
+    body {
+      font-family: sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .toggle-theme {
+      float: right;
+      margin-top: -40px;
+      margin-bottom: 20px;
+      background-color: transparent;
+      border: 1px solid var(--text-color);
+      color: var(--text-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    form {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    input[type="text"],
+    input[type="color"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1 1 150px;
+    }
+
+    input[type="color"] {
+      max-width: 60px;
+      padding: 0;
+      height: 36px;
+    }
+
+    #search-input {
+      margin-bottom: 20px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 300px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      color: var(--button-text);
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-green { background-color: var(--green); }
+    .btn-red   { background-color: var(--red); }
+    .btn-blue  { background-color: var(--blue); }
+    .btn-gray  { background-color: var(--gray); }
+
+    .habit-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .habit-card {
+      background-color: var(--card-bg);
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 300px;
+      transition: background-color 0.3s;
+    }
+
+    .habit-card h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .habit-card .count {
+      margin: 10px 0;
+    }
+
+    .habit-card form {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .habit-card input[type="text"] {
+      flex: 1 1 140px;
+    }
+
+    .highlight-card {
+      background-color: var(--card-bg);
+      max-width: 960px;
+      margin: 0 auto 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .toggle-theme {
+        float: none;
+        display: block;
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+
+      form {
+        flex-direction: column;
+      }
+
+      input[type="text"],
+      input[type="color"],
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        height: 42px;
+        font-size: 15px;
+        padding: 6px 10px;
+      }
+
+      input[type="color"] {
+        max-width: 48px;
+        height: 42px;
+      }
+
+      .habit-card form {
+        flex-direction: column;
+      }
+
+      .habit-list {
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>習慣トラッカー</h1>
+  <button class="toggle-theme" onclick="toggleTheme()">テーマ切替</button>
+
+  <form action="/add" method="POST">
+    <input type="text" name="name" placeholder="習慣を入力" required>
+    <input type="text" name="reason" placeholder="理由（任意）">
+    <input type="color" name="color" value="#4CAF50" title="色を選択">
+    <button class="btn-green" type="submit">＋ 追加</button>
+  </form>
+
+  <input type="text" id="search-input" placeholder="習慣を検索">
+
+  {% if top_habit_name %}
+  <div class="highlight-card">
+    <h2>🏅 今週最も達成した習慣</h2>
+    <p><strong>{{ top_habit_name }}</strong>（{{ top_habit_count }}日達成）</p>
+  </div>
+  {% endif %}
+
+  <div class="habit-list" id="habit-list">
+    <div class="habit-card">
+      <h2>今週の達成率</h2>
+      <canvas id="completionChart" width="250" height="250"></canvas>
+      <p class="count">{{ completed_count }} / {{ total_count }} 達成</p>
+    </div>
+
+    {% for habit in habits %}
+    <div class="habit-card" data-name="{{ habit.name }}" data-index="{{ loop.index0 }}" style="border-top: 6px solid {{ habit.color|default('#4CAF50') }};">
+      <h2>{{ habit.name }}</h2>
+      <div class="count">連続 {{ habit.continuous_days }} 日 / 合計 {{ habit.total_days }} 日</div>
+
+      <form action="/check/{{ loop.index0 }}" method="POST">
+        <button class="btn-green" type="submit">✅ 達成</button>
+      </form>
+
+      <form action="/miss/{{ loop.index0 }}" method="POST">
+        <input type="text" name="reason" placeholder="未達成理由を入力">
+        <button class="btn-red" type="submit">❌ 未達成</button>
+      </form>
+
+      <form action="/detail/{{ loop.index0 }}" method="get">
+        <button class="btn-gray" type="submit">📖 詳細</button>
+      </form>
+
+      <form action="/graph/{{ loop.index0 }}" method="get">
+        <button class="btn-blue" type="submit">📅 月間記録</button>
+      </form>
+
+      <form action="/delete/{{ loop.index0 }}" method="POST">
+        <button class="btn-gray" type="submit">🗑 削除</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    window.onload = function () {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+
+      const canvas = document.getElementById("completionChart");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['達成', '未達成'],
+            datasets: [{
+              data: [{{ completed_count | safe }}, {{ total_count - completed_count }}],
+              backgroundColor: ['#4CAF50', '#f44336']
+            }]
+          },
+          options: { plugins: { legend: { position: 'bottom' } } }
+        });
+      }
+
+      document.getElementById("search-input").addEventListener("input", function () {
+        const keyword = this.value.toLowerCase();
+        document.querySelectorAll(".habit-card[data-name]").forEach(card => {
+          const name = card.dataset.name.toLowerCase();
+          card.style.display = name.includes(keyword) ? "block" : "none";
+        });
+      });
+
+      new Sortable(document.getElementById('habit-list'), {
+        animation: 150,
+        handle: '.habit-card',
+        onEnd: function (evt) {
+          const order = [];
+          document.querySelectorAll('.habit-card[data-index]').forEach(card => {
+            order.push(card.dataset.index);
+          });
+          fetch('/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: order })
+          });
+        }
+      });
+    };
+  </script>
+</body>
+</html>

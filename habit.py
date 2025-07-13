@@ -1,6 +1,6 @@
 # habit.py
 
-from datetime import date
+from datetime import date, timedelta
 import json
 
 
@@ -51,25 +51,46 @@ class Habit:
 
     def set_miss_reason(self, reason_text):
         today_str = date.today().isoformat()
-        if today_str not in self.logs:
-            self.logs[today_str] = DailyLog(today_str)
-        self.logs[today_str].done = False
-        self.logs[today_str].reason_for_miss = reason_text
+
+        # すでに達成済みなら、理由だけ記録し、done は変更しない
+        if today_str in self.logs and self.logs[today_str].done:
+            self.logs[today_str].reason_for_miss = reason_text
+            return
+
+        # 未記録 or 未達成 → 新たに記録する
+        self.logs[today_str] = DailyLog(
+            date_str=today_str,
+            done=False,
+            reason_for_miss=reason_text
+        )
+
 
     def get_streak(self):
         """
-        今日までの連続達成日数を返す
+        今日からさかのぼって連続達成日数をカウントする。
+        未達成または記録なしでストリークは終了。
         """
         streak = 0
         current_date = date.today()
+
         while True:
             date_str = current_date.isoformat()
-            if date_str in self.logs and self.logs[date_str].done:
-                streak += 1
-                current_date = current_date.fromordinal(current_date.toordinal() - 1)
+
+            if date_str in self.logs:
+                log = self.logs[date_str]
+                if log.done:
+                    streak += 1
+                else:
+                    break  # 未達成 → 終了
             else:
-                break
+                break  # 記録なし → 終了
+
+            # 日付を 1日前に更新（正しく上書き）
+            current_date = current_date - timedelta(days=1)
+
         return streak
+
+
 
     def get_total_completed(self):
         return sum(1 for log in self.logs.values() if log.done)
@@ -80,6 +101,8 @@ class Habit:
             "reason": self.reason,
             "logs": {d: log.to_dict() for d, log in self.logs.items()}
         }
+    
+
 
     @staticmethod
     def from_dict(data):
@@ -89,3 +112,4 @@ class Habit:
             for d, log_data in data.get("logs", {}).items()
         }
         return habit
+    

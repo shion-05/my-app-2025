@@ -1,0 +1,14 @@
+{
+  "habits": [
+    {
+      "name": "あ",
+      "reason": "あ",
+      "color": "#4caf50",
+      "records": {},
+      "continuous_days": 0,
+      "total_days": 0
+    }
+  ],
+  "records": {},
+  "order": []
+}
