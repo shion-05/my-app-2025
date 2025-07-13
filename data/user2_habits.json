@@ -1,0 +1,46 @@
+[
+  {
+    "name": "筋トレ",
+    "reason": "健康のため",
+    "memo": "",
+    "dates": [],
+    "misses": [
+      {
+        "date": "2025-07-13",
+        "reason": ""
+      }
+    ],
+    "color": "#4caf50",
+    "continuous_days": 0,
+    "total_days": 0
+  },
+  {
+    "name": "あ",
+    "reason": "い",
+    "dates": [],
+    "misses": [
+      {
+        "date": "2025-07-13",
+        "reason": ""
+      }
+    ],
+    "color": "#4caf50",
+    "continuous_days": 0,
+    "total_days": 0
+  },
+  {
+    "name": "あ",
+    "reason": "あ",
+    "memo": "あ",
+    "dates": [],
+    "misses": [
+      {
+        "date": "2025-07-13",
+        "reason": ""
+      }
+    ],
+    "color": "#4caf50",
+    "continuous_days": 0,
+    "total_days": 0
+  }
+]

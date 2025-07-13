@@ -1,205 +1,213 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from datetime import date, timedelta
-import os
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 import json
+import os
+from datetime import datetime, timedelta, date
 
 app = Flask(__name__)
-DATA_FILE = "habits.json"
+app.secret_key = 'your_secret_key'
 
-# ------------------- データ読み書き関数 ------------------- #
-def load_habits():
-    if not os.path.exists(DATA_FILE):
+# === ユーザーデータの読み書き ===
+def load_users():
+    if not os.path.exists('users.json'):
+        return {}
+    with open('users.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def save_users(users):
+    with open('users.json', 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+# === 習慣データの読み書き ===
+def load_data(username):
+    path = f'data/{username}_habits.json'
+    if not os.path.exists(path):
         return []
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
-        for habit in data:
-            habit.setdefault("logs", {})
-        return data
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-def save_habits(habits):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(habits, f, ensure_ascii=False, indent=2)
+def save_data(username, data):
+    os.makedirs('data', exist_ok=True)
+    path = f'data/{username}_habits.json'
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-# ------------------- ルーティング ------------------- #
-@app.route("/")
+# === ログイン関連 ===
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        users = load_users()
+        if username in users and users[username]['password'] == password:
+            session['username'] = username
+            return redirect('/')
+        return render_template('login.html', error='ログイン失敗')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+# === メイン画面 ===
+@app.route('/')
 def index():
-    habits = load_habits()
-    today = date.today().isoformat()
-    today_obj = date.today()
+    if 'username' not in session:
+        return redirect('/login')
+    username = session['username']
+    data = load_data(username)
 
-    total_completed = 0
-    total_possible = 0
-    top_habit_name = None
-    top_habit_count = -1
+    today = datetime.today().date()
+    week_ago = today - timedelta(days=7)
 
-    for habit in habits:
-        habit["total_days"] = sum(1 for log in habit["logs"].values() if log["done"])
+    completed_count = sum(
+        1 for h in data
+        for d in h.get('dates', [])
+        if week_ago <= datetime.strptime(d, "%Y-%m-%d").date() <= today
+    )
+    total_count = len(data) * 7
 
-        continuous_days = 0
-        for i in range(0, 100):
-            d = today_obj - timedelta(days=i)
-            log = habit["logs"].get(d.isoformat())
-            if log and log["done"]:
-                continuous_days += 1
-            else:
-                break
-        habit["continuous_days"] = continuous_days
+    top_habit_name = ''
+    top_habit_count = 0
+    for h in data:
+        count = sum(
+            1 for d in h.get('dates', [])
+            if week_ago <= datetime.strptime(d, "%Y-%m-%d").date() <= today
+        )
+        if count > top_habit_count:
+            top_habit_count = count
+            top_habit_name = h['name']
 
-        weekly_count = 0
-        for i in range(0, 7):
-            d = today_obj - timedelta(days=i)
-            log = habit["logs"].get(d.isoformat())
-            total_possible += 1
-            if log and log["done"]:
-                total_completed += 1
-                weekly_count += 1
+    return render_template('index.html', habits=data, completed_count=completed_count, total_count=total_count,
+                           top_habit_name=top_habit_name, top_habit_count=top_habit_count)
 
-        if weekly_count > top_habit_count:
-            top_habit_count = weekly_count
-            top_habit_name = habit["name"]
-
-    return render_template("index.html", habits=habits, today=today,
-                           completed_count=total_completed,
-                           total_count=total_possible,
-                           top_habit_name=top_habit_name,
-                           top_habit_count=top_habit_count)
-
-@app.route("/add", methods=["POST"])
+@app.route('/add', methods=['POST'])
 def add():
-    name = request.form.get("name")
-    reason = request.form.get("reason", "")
-    color = request.form.get("color", "#4CAF50")
-    if not name:
-        return redirect(url_for("index"))
-    habits = load_habits()
-    habits.append({
-        "name": name,
-        "reason": reason,
-        "color": color,
-        "logs": {}
+    if 'username' not in session:
+        return redirect('/login')
+    username = session['username']
+    data = load_data(username)
+    name = request.form['name']
+    reason = request.form.get('reason', '')
+    color = request.form.get('color', '#4CAF50')
+    memo = request.form.get('memo', '')
+    data.insert(0, {
+        'name': name,
+        'reason': reason,
+        'memo': memo,
+        'dates': [],
+        'misses': [],
+        'color': color,
+        'continuous_days': 0,
+        'total_days': 0
     })
-    save_habits(habits)
-    return redirect(url_for("index"))
+    save_data(username, data)
+    return redirect('/')
 
-@app.route("/check/<int:index>", methods=["POST"])
+@app.route('/check/<int:index>', methods=['POST'])
 def check(index):
-    habits = load_habits()
-    today = date.today().isoformat()
-    habits[index]["logs"][today] = {
-        "done": True,
-        "reason_for_miss": ""
-    }
-    save_habits(habits)
-    return redirect(url_for("index"))
+    username = session['username']
+    data = load_data(username)
+    today = datetime.today().date().isoformat()
+    if today not in data[index]['dates']:
+        data[index]['dates'].append(today)
+        # もし未達成からの切り替えなら削除
+        data[index]['misses'] = [m for m in data[index]['misses'] if m['date'] != today]
+        data[index]['continuous_days'] += 1
+        data[index]['total_days'] += 1
+    save_data(username, data)
+    return redirect('/')
 
-@app.route("/miss/<int:index>", methods=["POST"])
+@app.route('/miss/<int:index>', methods=['POST'])
 def miss(index):
-    reason = request.form.get("reason", "")
-    habits = load_habits()
-    today = date.today().isoformat()
-    habits[index]["logs"][today] = {
-        "done": False,
-        "reason_for_miss": reason
-    }
-    save_habits(habits)
-    return redirect(url_for("index"))
+    username = session['username']
+    data = load_data(username)
+    today = datetime.today().date().isoformat()
+    # 既に達成していれば取り消す
+    if today in data[index]['dates']:
+        data[index]['dates'].remove(today)
+        data[index]['total_days'] -= 1
+    reason = request.form['reason']
+    # 重複しないようにmiss更新
+    data[index]['misses'] = [m for m in data[index]['misses'] if m['date'] != today]
+    data[index]['misses'].append({'date': today, 'reason': reason})
+    data[index]['continuous_days'] = 0
+    save_data(username, data)
+    return redirect('/')
 
-@app.route("/delete/<int:index>", methods=["POST"])
+@app.route('/delete/<int:index>', methods=['POST'])
 def delete(index):
-    habits = load_habits()
-    habits.pop(index)
-    save_habits(habits)
-    return redirect(url_for("index"))
+    username = session['username']
+    data = load_data(username)
+    del data[index]
+    save_data(username, data)
+    return redirect('/')
 
-@app.route("/detail/<int:index>")
+@app.route('/detail/<int:index>')
 def detail(index):
-    habits = load_habits()
-    habit = habits[index]
-    today = date.today()
+    username = session['username']
+    data = load_data(username)
+    habit = data[index]
 
-    status_list = []
-    for i in range(6, -1, -1):
-        d = today - timedelta(days=i)
-        log = habit["logs"].get(d.isoformat())
-        mark = "✔" if log and log["done"] else "✘"
-        status_list.append(mark)
-    status_str = " ".join(status_list)
+    today = datetime.today().date()
+    week_ago = today - timedelta(days=6)
 
-    recent_miss_reason = ""
-    for i in range(0, 7):
-        d = today - timedelta(days=i)
-        log = habit["logs"].get(d.isoformat())
-        if log and not log["done"] and log.get("reason_for_miss"):
-            recent_miss_reason = log["reason_for_miss"]
-            break
+    status_str = ''.join(
+        '✔' if (week_ago + timedelta(days=i)).isoformat() in habit['dates'] else '✘'
+        for i in range(7)
+    )
 
-    total_days = sum(1 for log in habit["logs"].values() if log["done"])
-    continuous_days = 0
-    for i in range(0, 100):
-        d = today - timedelta(days=i)
-        log = habit["logs"].get(d.isoformat())
-        if log and log["done"]:
-            continuous_days += 1
-        else:
-            break
+    recent_miss_reason = habit['misses'][-1]['reason'] if habit['misses'] else ''
 
-    return render_template("detail.html",
-                           habit=habit,
-                           status_str=status_str,
+    return render_template('detail.html', habit=habit, status_str=status_str,
                            recent_miss_reason=recent_miss_reason,
-                           total_days=total_days,
-                           continuous_days=continuous_days)
+                           continuous_days=habit['continuous_days'], total_days=habit['total_days'])
 
-@app.route("/graph/<int:index>")
+@app.route('/graph/<int:index>')
 def graph(index):
-    from calendar import monthrange
-    year = request.args.get("year", type=int)
-    month = request.args.get("month", type=int)
-    today = date.today()
+    username = session['username']
+    data = load_data(username)
+    habit = data[index]
 
-    habits = load_habits()
-    habit = habits[index]
+    today = datetime.today()
+    year = int(request.args.get('year', today.year))
+    month = int(request.args.get('month', today.month))
 
-    if not year or not month:
-        year = today.year
-        month = today.month
+    import calendar
+    _, last_day = calendar.monthrange(year, month)
 
-    _, last_day = monthrange(year, month)
+    dates_done = set(habit.get('dates', []))
+    dates_missed = set(m['date'] for m in habit.get('misses', []))
+
     calendar_data = []
     for day in range(1, last_day + 1):
-        d = date(year, month, day)
-        log = habit["logs"].get(d.isoformat())
-        if log:
-            status = "done" if log["done"] else "missed"
+        d_str = date(year, month, day).isoformat()
+        if d_str in dates_done:
+            status = 'done'
+        elif d_str in dates_missed:
+            status = 'missed'
         else:
-            status = "empty"
-        calendar_data.append({"day": day, "status": status})
+            status = 'empty'
+        calendar_data.append({'day': day, 'status': status})
 
-    prev_month = 12 if month == 1 else month - 1
-    prev_year = year - 1 if month == 1 else year
-    next_month = 1 if month == 12 else month + 1
-    next_year = year + 1 if month == 12 else year
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
 
-    return render_template("graph.html",
-                           habit=habit,
-                           index=index,
-                           year=year,
-                           month=month,
-                           calendar_data=calendar_data,
-                           prev_year=prev_year,
-                           prev_month=prev_month,
-                           next_year=next_year,
-                           next_month=next_month)
+    return render_template('graph.html', habit=habit, index=index, year=year, month=month,
+                           calendar_data=calendar_data, prev_year=prev_year, prev_month=prev_month,
+                           next_year=next_year, next_month=next_month)
 
-@app.route("/reorder", methods=["POST"])
+@app.route('/reorder', methods=['POST'])
 def reorder():
-    order = request.get_json().get("order", [])
-    habits = load_habits()
-    reordered = [habits[int(i)] for i in order if i.isdigit() and int(i) < len(habits)]
-    save_habits(reordered)
-    return jsonify({"status": "ok"})
+    username = session['username']
+    order = request.json['order']
+    data = load_data(username)
+    new_data = [data[int(i)] for i in order if int(i) < len(data)]
+    save_data(username, new_data)
+    return jsonify({'status': 'ok'})
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)

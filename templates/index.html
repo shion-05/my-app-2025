@@ -4,246 +4,188 @@
   <meta charset="UTF-8">
   <title>習慣トラッカー</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
-    :root {
-      --bg-color: #f5f5f5;
-      --card-bg: white;
-      --text-color: #333;
-      --button-text: white;
-      --green: #4CAF50;
-      --red: #f44336;
-      --blue: #2196F3;
-      --gray: #888;
-    }
-
-    body.dark-mode {
-      --bg-color: #1e1e1e;
-      --card-bg: #2e2e2e;
-      --text-color: #f0f0f0;
-      --button-text: #1e1e1e;
-    }
-
     body {
       font-family: sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
       margin: 0;
-      padding: 20px;
+      padding: 0;
       transition: background-color 0.3s, color 0.3s;
     }
+    .dark-mode {
+      background-color: #121212;
+      color: #f0f0f0;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+    }
+    .logout-btn {
+      background-color: #f44336;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .logout-btn:hover {
+      background-color: #d32f2f;
+    }
 
-    h1 {
+    /* 修正済：追加フォームの見た目とダークモード対応 */
+    .add-form {
+      background: #fff;
+      color: #000;
+      padding: 15px;
+      margin: 10px auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      max-width: 600px;
+      box-sizing: border-box;
+    }
+    .dark-mode .add-form {
+      background: #2c2c2c;
+      color: #f0f0f0;
+    }
+    .add-form label {
+      display: block;
       margin-bottom: 10px;
     }
-
-    .toggle-theme {
-      float: right;
-      margin-top: -40px;
-      margin-bottom: 20px;
-      background-color: transparent;
-      border: 1px solid var(--text-color);
-      color: var(--text-color);
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
+    .add-form input[type="text"],
+    .add-form textarea,
+    .add-form input[type="color"] {
+      width: 100%;
+      margin-top: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .add-form input[type="color"] {
+      max-width: 80px;
+      padding: 4px;
+    }
+    .dark-mode .add-form input[type="text"],
+    .dark-mode .add-form textarea {
+      background-color: #444;
+      color: #f0f0f0;
+      border: 1px solid #777;
     }
 
-    form {
-      margin-bottom: 20px;
+    .habit-container {
       display: flex;
-      flex-wrap: wrap;
+      overflow-x: auto;
+      padding: 20px;
       gap: 10px;
     }
-
-    input[type="text"],
-    input[type="color"] {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      flex: 1 1 150px;
+    .habit-card {
+      flex: 0 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      min-width: 250px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: relative;
+      cursor: grab;
     }
-
-    input[type="color"] {
-      max-width: 60px;
-      padding: 0;
-      height: 36px;
+    .habit-card h3 {
+      margin-top: 0;
     }
-
-    #search-input {
-      margin-bottom: 20px;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%;
-      max-width: 300px;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    button {
-      padding: 8px 16px;
+    .habit-card button {
+      margin-top: 5px;
+      margin-right: 5px;
+      padding: 6px 12px;
       border: none;
       border-radius: 6px;
-      color: var(--button-text);
-      font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, opacity 0.3s;
+    }
+    .dark-mode .habit-card {
+      background: #2c2c2c;
     }
 
-    button:hover {
-      transform: scale(1.05);
+    /* 修正済：円グラフの幅 */
+    canvas {
+      max-width: 300px;
+      margin: 10px auto;
+      display: block;
     }
 
-    .btn-green { background-color: var(--green); }
-    .btn-red   { background-color: var(--red); }
-    .btn-blue  { background-color: var(--blue); }
-    .btn-gray  { background-color: var(--gray); }
-
-    .habit-list {
+    .search-bar {
+      margin: 10px auto;
+      max-width: 400px;
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      max-width: 1280px;
-      margin: 0 auto;
+      gap: 5px;
+      padding: 0 10px;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
-    .habit-card {
-      background-color: var(--card-bg);
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: 300px;
-      transition: background-color 0.3s;
-    }
-
-    .habit-card h2 {
-      margin-top: 0;
-      font-size: 18px;
-    }
-
-    .habit-card .count {
-      margin: 10px 0;
-    }
-
-    .habit-card form {
-      margin-top: 8px;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .habit-card input[type="text"] {
-      flex: 1 1 140px;
-    }
-
-    .highlight-card {
-      background-color: var(--card-bg);
-      max-width: 960px;
-      margin: 0 auto 20px auto;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-
-    @media (max-width: 600px) {
-      .toggle-theme {
-        float: none;
-        display: block;
-        margin-top: 0;
-        margin-bottom: 10px;
-      }
-
-      form {
-        flex-direction: column;
-      }
-
-      input[type="text"],
-      input[type="color"],
-      button {
-        width: 100%;
-        box-sizing: border-box;
-        height: 42px;
-        font-size: 15px;
-        padding: 6px 10px;
-      }
-
-      input[type="color"] {
-        max-width: 48px;
-        height: 42px;
-      }
-
-      .habit-card form {
-        flex-direction: column;
-      }
-
-      .habit-list {
-        flex-direction: column;
-        gap: 12px;
-      }
+    .theme-toggle {
+      cursor: pointer;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #607d8b;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <h1>習慣トラッカー</h1>
-  <button class="toggle-theme" onclick="toggleTheme()">テーマ切替</button>
+  <header>
+    <h2>習慣トラッカー</h2>
+    <div>
+      <button onclick="toggleTheme()" class="theme-toggle">テーマ切替</button>
+      <a href="/logout"><button class="logout-btn">ログアウト</button></a>
+    </div>
+  </header>
 
-  <form action="/add" method="POST">
-    <input type="text" name="name" placeholder="習慣を入力" required>
-    <input type="text" name="reason" placeholder="理由（任意）">
-    <input type="color" name="color" value="#4CAF50" title="色を選択">
-    <button class="btn-green" type="submit">＋ 追加</button>
+  <form class="add-form" action="/add" method="post">
+    <label>習慣名：<input type="text" name="name" required></label>
+    <label>理由：<input type="text" name="reason"></label>
+    <label>メモ（任意）：<input type="text" name="memo"></label>
+    <label>色：<input type="color" name="color" value="#4caf50"></label>
+    <button type="submit">追加</button>
   </form>
 
-  <input type="text" id="search-input" placeholder="習慣を検索">
-
-  {% if top_habit_name %}
-  <div class="highlight-card">
-    <h2>🏅 今週最も達成した習慣</h2>
-    <p><strong>{{ top_habit_name }}</strong>（{{ top_habit_count }}日達成）</p>
+  <div class="search-bar">
+    <input type="text" id="searchInput" oninput="filterHabits()" placeholder="習慣名で検索...">
   </div>
-  {% endif %}
 
-  <div class="habit-list" id="habit-list">
-    <div class="habit-card">
-      <h2>今週の達成率</h2>
-      <canvas id="completionChart" width="250" height="250"></canvas>
-      <p class="count">{{ completed_count }} / {{ total_count }} 達成</p>
-    </div>
+  <canvas id="progressChart"></canvas>
 
+  <div class="habit-container" id="habitContainer">
     {% for habit in habits %}
-    <div class="habit-card" data-name="{{ habit.name }}" data-index="{{ loop.index0 }}" style="border-top: 6px solid {{ habit.color|default('#4CAF50') }};">
-      <h2>{{ habit.name }}</h2>
-      <div class="count">連続 {{ habit.continuous_days }} 日 / 合計 {{ habit.total_days }} 日</div>
-
-      <form action="/check/{{ loop.index0 }}" method="POST">
-        <button class="btn-green" type="submit">✅ 達成</button>
-      </form>
-
-      <form action="/miss/{{ loop.index0 }}" method="POST">
-        <input type="text" name="reason" placeholder="未達成理由を入力">
-        <button class="btn-red" type="submit">❌ 未達成</button>
-      </form>
-
-      <form action="/detail/{{ loop.index0 }}" method="get">
-        <button class="btn-gray" type="submit">📖 詳細</button>
-      </form>
-
-      <form action="/graph/{{ loop.index0 }}" method="get">
-        <button class="btn-blue" type="submit">📅 月間記録</button>
-      </form>
-
-      <form action="/delete/{{ loop.index0 }}" method="POST">
-        <button class="btn-gray" type="submit">🗑 削除</button>
-      </form>
-    </div>
+      <div class="habit-card" style="border-top: 6px solid {{ habit.color }}" data-name="{{ habit.name }}">
+        <h3>{{ habit.name }}</h3>
+        <p>理由：{{ habit.reason }}</p>
+        {% if habit.memo %}
+        <p>メモ：{{ habit.memo }}</p>
+        {% endif %}
+        <p>連続日数：{{ habit.continuous_days }}日</p>
+        <p>合計達成日数：{{ habit.total_days }}日</p>
+        <form action="/check/{{ loop.index0 }}" method="post">
+          <button style="background-color:#4caf50;color:white;">達成</button>
+        </form>
+        <form action="/miss/{{ loop.index0 }}" method="post">
+          <input type="text" name="reason" placeholder="理由（省略可）">
+          <button style="background-color:#f44336;color:white;">未達成</button>
+        </form>
+        <form action="/delete/{{ loop.index0 }}" method="post">
+          <button style="background-color:gray;color:white;">削除</button>
+        </form>
+        <a href="/detail/{{ loop.index0 }}"><button>詳細</button></a>
+        <a href="/graph/{{ loop.index0 }}"><button>カレンダー</button></a>
+      </div>
     {% endfor %}
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
     function toggleTheme() {
       document.body.classList.toggle('dark-mode');
@@ -251,49 +193,45 @@
     }
 
     window.onload = function () {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') document.body.classList.add('dark-mode');
-
-      const canvas = document.getElementById("completionChart");
-      if (canvas) {
-        const ctx = canvas.getContext("2d");
-        new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ['達成', '未達成'],
-            datasets: [{
-              data: [{{ completed_count | safe }}, {{ total_count - completed_count }}],
-              backgroundColor: ['#4CAF50', '#f44336']
-            }]
-          },
-          options: { plugins: { legend: { position: 'bottom' } } }
-        });
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
       }
 
-      document.getElementById("search-input").addEventListener("input", function () {
-        const keyword = this.value.toLowerCase();
-        document.querySelectorAll(".habit-card[data-name]").forEach(card => {
-          const name = card.dataset.name.toLowerCase();
-          card.style.display = name.includes(keyword) ? "block" : "none";
-        });
+      const ctx = document.getElementById('progressChart');
+      const data = {
+        labels: ['達成', '未達成'],
+        datasets: [{
+          data: [{{ completed_count }}, {{ total_count - completed_count }}],
+          backgroundColor: ['#4caf50', '#f44336']
+        }]
+      };
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: data
       });
 
-      new Sortable(document.getElementById('habit-list'), {
+      new Sortable(document.getElementById('habitContainer'), {
         animation: 150,
-        handle: '.habit-card',
         onEnd: function (evt) {
-          const order = [];
-          document.querySelectorAll('.habit-card[data-index]').forEach(card => {
-            order.push(card.dataset.index);
-          });
-          fetch('/reorder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: order })
+          fetch("/reorder", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              order: Array.from(evt.to.children).map((el) => el.getAttribute('data-index'))
+            })
           });
         }
       });
     };
+
+    function filterHabits() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const cards = document.querySelectorAll(".habit-card");
+      cards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        card.style.display = name.includes(keyword) ? "block" : "none";
+      });
+    }
   </script>
 </body>
 </html>

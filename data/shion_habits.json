@@ -1,0 +1,22 @@
+[
+  {
+    "name": "筋トレ",
+    "reason": "健康のため",
+    "dates": [
+      "2025-07-13"
+    ],
+    "misses": [],
+    "color": "#4caf50",
+    "continuous_days": 1,
+    "total_days": 1
+  },
+  {
+    "name": "サプリを飲む",
+    "reason": "健康のため",
+    "dates": [],
+    "misses": [],
+    "color": "#4caf50",
+    "continuous_days": 0,
+    "total_days": 0
+  }
+]
