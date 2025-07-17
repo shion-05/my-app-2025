@@ -3,12 +3,13 @@
     "name": "筋トレ",
     "reason": "健康のため",
     "dates": [
-      "2025-07-13"
+      "2025-07-13",
+      "2025-07-14"
     ],
     "misses": [],
     "color": "#4caf50",
     "continuous_days": 1,
-    "total_days": 1
+    "total_days": 2
   },
   {
     "name": "サプリを飲む",
