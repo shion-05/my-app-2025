@@ -4,5 +4,8 @@
   },
   "syunpe": {
     "password": "1123"
+  },
+  "teacher": {
+    "password": "teacher"
   }
 }
