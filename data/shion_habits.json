@@ -4,20 +4,23 @@
     "reason": "健康のため",
     "dates": [
       "2025-07-13",
-      "2025-07-14"
+      "2025-07-14",
+      "2025-07-17"
     ],
     "misses": [],
     "color": "#4caf50",
-    "continuous_days": 1,
-    "total_days": 2
+    "continuous_days": 2,
+    "total_days": 3
   },
   {
     "name": "サプリを飲む",
     "reason": "健康のため",
-    "dates": [],
+    "dates": [
+      "2025-07-17"
+    ],
     "misses": [],
     "color": "#4caf50",
-    "continuous_days": 0,
-    "total_days": 0
+    "continuous_days": 1,
+    "total_days": 1
   }
 ]
