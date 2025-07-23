@@ -16,8 +16,6 @@
 
 ## 📸 スクリーンショット
 
-> ※スクリーンショットは画像ファイルとして `screenshots/` フォルダなどに保存し、以下に差し替えてください。
-
 ![トップページ（ライトモード）](screenshots/light_mode.png)
 ![月別カレンダー表示](screenshots/calendar_view.png)
 
