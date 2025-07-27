@@ -4,6 +4,8 @@
 
 [▶️ アプリを開く](https://habits-tracker-i5b3.onrender.com)
 
+先生が閲覧する場合は，ユーザー名，パスワードはどちらも "teacher" です．
+
 ---
 
 ## 📝 概要
