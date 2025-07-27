@@ -40,7 +40,7 @@
 
 | 種類         | 内容 |
 |--------------|------|
-| バックエンド | Python 3.x / Flask |
+| バックエンド | Python / Flask |
 | フロントエンド | HTML / CSS / JavaScript |
 | グラフ描画    | [Chart.js](https://www.chartjs.org/)（週間達成率円グラフ） |
 | 並び替え     | [Sortable.js](https://sortablejs.github.io/Sortable/)（習慣カードの並び替え） |
